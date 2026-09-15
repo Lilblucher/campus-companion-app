@@ -112,7 +112,7 @@ db.getConnection()
   .catch((err) => {
     console.error("!Failed to connect to MySQL:", err.message);
     console.error(
-      "   Check your .env file — DB_HOST, DB_USER, DB_PASSWORD, DB_NAME"
+      "   Check your .env file DB_HOST, DB_USER, DB_PASSWORD, DB_NAME"
     );
     process.exit(1); // Exit so the team knows immediately something is wrong
   });
