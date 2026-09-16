@@ -2,7 +2,7 @@
 // Handles what happens when /api/auth/register and /api/auth/login are called.
 // Two account types: "student" and "lecturer" (see database/schema.sql).
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 
