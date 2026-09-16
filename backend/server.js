@@ -97,8 +97,7 @@ app.use((err, _req, res, _next) => {
 // This catches a wrong password or unreachable host early.
 db.getConnection()
   .then((connection) => {
-    connection.release(); // immediately return the connection to the pool
-    console.log("%MySQL connection pool is ready");
+      console.log("%MySQL connection pool is ready");
 
     app.listen(PORT, () => {
       console.log(`!!server running on port ${PORT}`);
