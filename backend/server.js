@@ -6,9 +6,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const db = require("./config/db"); // MySQL connection pool
-
-/*
 const authRoutes = require("./routes/auth");
+/*
 const studentRoutes = require("./routes/students");
 const groupRoutes = require("./routes/groups");
 const syncRoutes = require("./routes/sync");
@@ -64,13 +63,14 @@ app.get("/health", (_req, res) => {
 //  /api/students  → CRUD + search/filter (protected — lecturer or own record)
 //  /api/groups    → list groups, assign/transfer students (protected)
 //  /api/sync      → offline sync endpoint (protected)
-/*
+
 app.use("/api/auth", authRoutes);
+/*
 app.use("/api/students", studentRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/sync", syncRoutes);
 */
-// ── 404 handler ────────────────────────────────────────────────
+
 // Catches any request that didn't match a route above.
 app.use((_req, res) => {
   res.status(404).json({ error: "Route not found" });
