@@ -1,6 +1,6 @@
 // controllers/authController.js
 // Handles what happens when /api/auth/register and /api/auth/login are called.
-// Two account types: "student" and "lecturer" (see database/schema.sql + seed.sql).
+// Two account types: "student" and "lecturer" (see database/schema.sql).
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -12,14 +12,19 @@ const JWT_EXPIRES_IN = '2h';
 
 // ---------------------------------------------------------------------------
 // POST /api/auth/register  (students only — lecturer account is seeded)
-// Body: { student_name, student_number, program_of_study, claim_code, password }
+// Body: { name, student_number, programme_code, claim_code, password }
+//
+// Claim flow: a lecturer pre-creates the student's profile row with a
+// claim_code set. Registering here means supplying that exact code for the
+// matching student_number; once used, the code is cleared (set to NULL) so
+// it can't be replayed.
 // ---------------------------------------------------------------------------
 async function register(req, res) {
-  const { student_name, student_number, program_of_study, claim_code, password } = req.body;
+  const { name, student_number, programme_code, claim_code, password } = req.body;
 
   // --- basic validation (server is the source of truth; app also validates) ---
-  if (!student_name || student_name.trim().length < 2 || student_name.trim().length > 100) {
-    return res.status(400).json({ error: 'student_name must be 2-100 characters' });
+  if (!name || name.trim().length < 2 || name.trim().length > 100) {
+    return res.status(400).json({ error: 'name must be 2-100 characters' });
   }
 
   const trimmedNumber = (student_number || '').trim();
@@ -27,8 +32,8 @@ async function register(req, res) {
     return res.status(400).json({ error: 'student_number must be exactly 9 digits' });
   }
 
-  if (!['CS', 'IT', 'DS'].includes(program_of_study)) {
-    return res.status(400).json({ error: 'program_of_study must be CS, IT or DS' });
+  if (!['CS', 'IT', 'DS'].includes(programme_code)) {
+    return res.status(400).json({ error: 'programme_code must be CS, IT or DS' });
   }
 
   if (!password || password.length < 8) {
@@ -39,20 +44,10 @@ async function register(req, res) {
   try {
     await conn.beginTransaction();
 
-    // Claim code proves the person registering owns that student number.
-    const [claims] = await conn.query(
-      'SELECT * FROM claim_codes WHERE student_number = ? AND code = ? AND used = 0',
-      [trimmedNumber, claim_code]
-    );
-    if (claims.length === 0) {
-      await conn.rollback();
-      return res.status(400).json({ error: 'Invalid or already-used claim code' });
-    }
-
     // If the lecturer already created this student's profile, link to it
     // instead of creating a duplicate (per spec: "Never create a second profile").
     const [existing] = await conn.query(
-      'SELECT * FROM students WHERE student_number = ? AND deleted_at IS NULL',
+      'SELECT * FROM students WHERE student_number = ? AND is_deleted = 0',
       [trimmedNumber]
     );
 
@@ -60,27 +55,32 @@ async function register(req, res) {
     let studentId;
 
     if (existing.length > 0) {
-      studentId = existing[0].student_id;
+      const profile = existing[0];
+
+      // Claim code proves the person registering owns that student number.
+      if (!profile.claim_code || profile.claim_code !== claim_code) {
+        await conn.rollback();
+        return res.status(400).json({ error: 'Invalid or already-used claim code' });
+      }
+
+      studentId = profile.student_id;
       await conn.query(
-        'UPDATE students SET student_name = ?, program_of_study = ? WHERE student_id = ?',
-        [student_name.trim(), program_of_study, studentId]
+        `UPDATE students
+         SET name = ?, programme_code = ?, claim_code = NULL, status = 'active'
+         WHERE student_id = ?`,
+        [name.trim(), programme_code, studentId]
       );
     } else {
-      const [result] = await conn.query(
-        `INSERT INTO students (student_number, student_name, program_of_study, lab_group)
-         VALUES (?, ?, ?, NULL)`,
-        [trimmedNumber, student_name.trim(), program_of_study]
-      );
-      studentId = result.insertId;
+      // No lecturer-created profile exists, so there's nothing to claim.
+      await conn.rollback();
+      return res.status(400).json({ error: 'Invalid or already-used claim code' });
     }
 
     await conn.query(
-      `INSERT INTO accounts (student_id, role, password_hash)
-       VALUES (?, 'student', ?)`,
-      [studentId, passwordHash]
+      `INSERT INTO accounts (username, student_id, role, password_hash)
+       VALUES (?, ?, 'student', ?)`,
+      [trimmedNumber, studentId, passwordHash]
     );
-
-    await conn.query('UPDATE claim_codes SET used = 1 WHERE id = ?', [claims[0].id]);
 
     await conn.commit();
     return res.status(201).json({ message: 'Registered successfully. Please sign in.' });
@@ -113,10 +113,10 @@ async function login(req, res) {
 
     if (student_number) {
       const [rows] = await db.query(
-        `SELECT a.account_id, a.password_hash, a.role, s.student_id, s.student_name
+        `SELECT a.account_id, a.password_hash, a.role, s.student_id, s.name
          FROM accounts a
          JOIN students s ON s.student_id = a.student_id
-         WHERE s.student_number = ? AND s.deleted_at IS NULL AND a.disabled = 0`,
+         WHERE s.student_number = ? AND s.is_deleted = 0 AND a.is_locked = 0`,
         [student_number.trim()]
       );
       account = rows[0];
@@ -124,7 +124,7 @@ async function login(req, res) {
       const [rows] = await db.query(
         `SELECT account_id, password_hash, role, username
          FROM accounts
-         WHERE username = ? AND role = 'lecturer' AND disabled = 0`,
+         WHERE username = ? AND role = 'lecturer' AND is_locked = 0`,
         [username.trim()]
       );
       account = rows[0];
@@ -151,7 +151,7 @@ async function login(req, res) {
       token,
       role: account.role,
       student_id: account.student_id || null,
-      name: account.student_name || account.username,
+      name: account.name || account.username,
     });
   } catch (err) {
     console.error('login error:', err);

@@ -116,7 +116,7 @@ async function login(req, res) {
         `SELECT a.account_id, a.password_hash, a.role, s.student_id, s.student_name
          FROM accounts a
          JOIN students s ON s.student_id = a.student_id
-         WHERE s.student_number = ? AND s.deleted_at IS NULL AND a.disabled = 0`,
+         WHERE s.student_number = ? AND s.deleted_at IS NULL AND a.is_active = 0`,
         [student_number.trim()]
       );
       account = rows[0];
@@ -124,7 +124,7 @@ async function login(req, res) {
       const [rows] = await db.query(
         `SELECT account_id, password_hash, role, username
          FROM accounts
-         WHERE username = ? AND role = 'lecturer' AND disabled = 0`,
+         WHERE username = ? AND role = 'lecturer' AND is_active = 0`,
         [username.trim()]
       );
       account = rows[0];

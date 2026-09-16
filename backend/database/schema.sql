@@ -11,6 +11,10 @@
 --   * Soft deletion with deletion markers + number reservation
 --   * Record versions for sync / conflict resolution
 --   * Programme reference data (CS, IT, DS)
+--   * Claim codes live on the students row (claim_code column) —
+--     the lecturer pre-creates a profile with a claim_code, and a
+--     student "claims" it during registration by supplying that
+--     code; the column is cleared (set to NULL) once used.
 -- =============================================================
 
 DROP DATABASE IF EXISTS campus_companion;
@@ -43,7 +47,22 @@ CREATE TABLE lab_groups (
 ) ENGINE=InnoDB;
 
 -- -------------------------------------------------------------
--- 3. students  (profile — separate from auth)
+-- 3. lecturers  (created BEFORE students/accounts because both
+--    reference it via foreign keys)
+-- -------------------------------------------------------------
+CREATE TABLE lecturers (
+  lecturer_id    BIGINT       NOT NULL AUTO_INCREMENT,
+  name           VARCHAR(100) NOT NULL,
+  email          VARCHAR(120) NOT NULL,
+  role           ENUM('lecturer','admin') NOT NULL DEFAULT 'lecturer',
+  is_active      TINYINT(1)   NOT NULL DEFAULT 1,
+  created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (lecturer_id),
+  UNIQUE KEY uq_lecturer_email (email)
+) ENGINE=InnoDB;
+
+-- -------------------------------------------------------------
+-- 4. students  (profile — separate from auth)
 -- -------------------------------------------------------------
 CREATE TABLE students (
   student_id      BIGINT       NOT NULL AUTO_INCREMENT,   -- immutable
@@ -53,7 +72,7 @@ CREATE TABLE students (
   lab_group_id    INT          NULL,                      -- NULL = Unassigned
   status          ENUM('active','unassigned','pending','deleted')
                                NOT NULL DEFAULT 'unassigned',
-  claim_code      VARCHAR(20)  NULL,                      -- fictitious code for ownership claim
+  claim_code      VARCHAR(20)  NULL,                      -- set by lecturer; cleared once claimed
   is_deleted      TINYINT(1)   NOT NULL DEFAULT 0,
   deleted_at      TIMESTAMP    NULL,
   record_version  INT          NOT NULL DEFAULT 1,        -- optimistic locking / sync
@@ -75,7 +94,7 @@ CREATE TABLE students (
 ) ENGINE=InnoDB;
 
 -- -------------------------------------------------------------
--- 4. accounts  (authentication — students AND lecturers)
+-- 5. accounts  (authentication — students AND lecturers)
 -- -------------------------------------------------------------
 CREATE TABLE accounts (
   account_id     BIGINT       NOT NULL AUTO_INCREMENT,
@@ -103,20 +122,6 @@ CREATE TABLE accounts (
       (role = 'student'  AND student_id  IS NOT NULL AND lecturer_id IS NULL) OR
       (role = 'lecturer' AND lecturer_id IS NOT NULL AND student_id  IS NULL)
     )
-) ENGINE=InnoDB;
-
--- -------------------------------------------------------------
--- 5. lecturers  (created before accounts because of FK)
--- -------------------------------------------------------------
-CREATE TABLE lecturers (
-  lecturer_id    BIGINT       NOT NULL AUTO_INCREMENT,
-  name           VARCHAR(100) NOT NULL,
-  email          VARCHAR(120) NOT NULL,
-  role           ENUM('lecturer','admin') NOT NULL DEFAULT 'lecturer',
-  is_active      TINYINT(1)   NOT NULL DEFAULT 1,
-  created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (lecturer_id),
-  UNIQUE KEY uq_lecturer_email (email)
 ) ENGINE=InnoDB;
 
 -- -------------------------------------------------------------
