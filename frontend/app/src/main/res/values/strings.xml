@@ -1,3 +1,4 @@
-<resources>
-    <string name="app_name">CampusCompanionApp</string>
-</resources>
+<string name="app_name_full">Campus Companion App</string>
+<string name="splash_tagline">Connect  •  Manage  •  Grow</string>
+<string name="get_started">Get Started</string>
+<string name="app_icon_desc">App icon</string>
