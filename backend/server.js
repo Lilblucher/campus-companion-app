@@ -101,11 +101,11 @@ db.getConnection()
 
     app.listen(PORT, () => {
       console.log(`!!server running on port ${PORT}`);
-      console.log(`   Health check → http://localhost:${PORT}/health`);
-      console.log(`   Auth         → http://localhost:${PORT}/api/auth`);
-      console.log(`   Students     → http://localhost:${PORT}/api/students`);
-      console.log(`   Groups       → http://localhost:${PORT}/api/groups`);
-      console.log(`   Sync         → http://localhost:${PORT}/api/sync`);
+      console.log(`   Health check -> http://localhost:${PORT}/health`);
+      console.log(`   Auth         -> http://localhost:${PORT}/api/auth`);
+      console.log(`   Students     -> http://localhost:${PORT}/api/students`);
+      console.log(`   Groups       -> http://localhost:${PORT}/api/groups`);
+      console.log(`   Sync         -> http://localhost:${PORT}/api/sync`);
     });
   })
   .catch((err) => {

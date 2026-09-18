@@ -165,7 +165,7 @@ async function login(req, res) {
 // later. For now this just gives the app a clean endpoint to call.
 // ---------------------------------------------------------------------------
 async function logout(req, res) {
-  return res.json({ message: 'Logged out. Please discard the token on the device.' });
+  return res.json({ message: 'Logged out' });
 }
 
 module.exports = { register, login, logout };
