@@ -86,7 +86,7 @@ async function withTransaction(work) {
 }
 
 // ---- 5. Startup connectivity check ----
-async function getConnection() {
+async function checkConnection()  {
   const conn = await pool.getConnection();
   try {
     await conn.query('SELECT 1');
@@ -103,6 +103,10 @@ async function getConnection() {
     conn.release();
   }
 }
+// Hand out a raw connection (caller must release it)
+function getConnection() {
+  return pool.getConnection();
+}
 
 // ---- 6. Graceful shutdown ----
 async function closePool() {
@@ -110,4 +114,4 @@ async function closePool() {
   console.log('[db] Connection pool closed.');
 }
 
-module.exports = { pool, query, withTransaction, getConnection, closePool };
+module.exports = { pool, query, withTransaction, getConnection, checkConnection, closePool };
