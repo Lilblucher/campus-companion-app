@@ -1,12 +1,15 @@
-<string name="app_name_full">Campus Companion App</string>
-<string name="splash_tagline">Connect  •  Manage  •  Grow</string>
-<string name="get_started">Get Started</string>
-<string name="app_icon_desc">App icon</string>
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name_full">Campus Companion App</string>
+    <string name="splash_tagline">Connect • Manage • Grow</string>
+    <string name="get_started">Get Started</string>
+    <string name="app_icon_desc">App icon</string>
+    <string name="app_name">Campus Companion</string>
 
-<string name="sign_in">Sign In</string>
-<string name="sign_in_to_continue">Sign in to continue</string>
-<string name="student_number">Student Number</string>
-<string name="password">Password</string>
-<string name="login">Login</string>
-<string name="no_account_sign_up">Don\'t have an Account? Sign Up</string>
-
+    <string name="sign_in">Sign In</string>
+    <string name="sign_in_to_continue">Sign in to continue</string>
+    <string name="student_number">Student Number</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="no_account_sign_up">Don\'t have an Account? Sign Up</string>
+</resources>
